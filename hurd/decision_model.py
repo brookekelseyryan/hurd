@@ -129,7 +129,7 @@ class DecisionModelBase(ABC):
         b_preds = preds[:, 1]
         return np.sum((b_preds > 0.5) == (targets > 0.5)) / b_preds.size
 
-    def fit(self, dataset, val_dataset=None, batch_size=None):
+    def fit(self, dataset, val_dataset=None, batch_size=None, init=True):
         self.dataset = dataset
         self.val_dataset = val_dataset
 
@@ -141,10 +141,11 @@ class DecisionModelBase(ABC):
             print("No optimizer specified. Using default.")
             self.optimizer = SGD()
 
-        self.optimizer.initialize(self, batch_size=batch_size)
+        if init:
+            self.optimizer.initialize(self, batch_size=batch_size)
 
-        if self.optimizer.tolerance:
-            n_iters_no_progress = 0
+            if self.optimizer.tolerance:
+                n_iters_no_progress = 0
 
         for ix in range(self.optimizer.n_iters):
 
