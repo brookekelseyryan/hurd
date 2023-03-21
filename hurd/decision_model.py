@@ -70,9 +70,10 @@ class DecisionModelBase(ABC):
 
             self.stochastic_func = constant_error
 
-    def __str__(self):
-        kvs = ", ".format(["{}={}".format(k, v) for k, v in self.config.items()])
-        return "{}({})".format(self.id, kvs)
+    # commenting out temporarily cause it breaks wandb
+    # def __str__(self):
+    #     kvs = ", ".format(["{}={}".format(k, v) for k, v in self.config.items()])
+    #     return "{}({})".format(self.id, kvs)
 
     def save_params(self, path):
         with open(path, "w") as handle:
@@ -108,6 +109,14 @@ class DecisionModelBase(ABC):
         preds = self.predict(dataset=dataset)
 
         return self.loss_function(preds, targets)
+
+    def compute_precise_accuracy(self, dataset=None, range=0.2):
+        _, _, targets = dataset.cached_arrays
+
+        preds = self.predict(dataset=dataset)
+        # the predictions for gamble B
+        b_preds = preds[:, 1]
+        return np.sum(((b_preds - targets) < range)) / b_preds.size
 
     def compute_accuracy(self, dataset=None):
 
