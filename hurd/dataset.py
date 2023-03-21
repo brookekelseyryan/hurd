@@ -257,6 +257,27 @@ class Dataset:
         new_dataset.cache_arrays()
         return new_dataset
 
+    def retarget_with_is_B_highest_EV(self):
+        """
+        Creates a copy of the current dataset with new targets, wherein the target is 1 when B has a higher EV
+        (signifying that B is the best gamble and should be taken with a 100% probability), and 0 otherwise.
+        """
+        new_dataset = deepcopy(self)
+        new_targets_dict = OrderedDict()
+
+        for ix,  (p_id, problem, target) in enumerate(self):
+            print(problem)
+            print("problem A EV: " + str(problem.A.expected_value()))
+            print("problem B EV: " + str(problem.B.expected_value()))
+            if problem.B.has_higher_expected_value_than(problem.A):
+                new_targets_dict[p_id] = 1
+            else:
+                new_targets_dict[p_id] = 0
+
+        new_dataset._targets = new_targets_dict
+        new_dataset.cache_arrays()
+        return new_dataset
+
     def iloc(self, index):
         p_id = self.problem_ids[index]
         target = None if self._targets is None else self._targets[p_id]
