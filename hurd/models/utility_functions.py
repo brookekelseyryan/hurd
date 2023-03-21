@@ -11,7 +11,7 @@
         Cambridge university press.
 
     Scholten, M., & Read, D. (2014). Prospect theory and the "forgotten"
-        fourfold pattern of risk preferences. Journal of Risk and 
+        fourfold pattern of risk preferences. Journal of Risk and
         Uncertainty, DOI 10.1007/s11166-014-9183-2.
 
     Peterson, J. C., Bourgin, D. D., Agrawal, M., Reichman, D., &
@@ -27,6 +27,8 @@ import numpy as np
 from jax import vmap
 import jax.numpy as jnp
 from jax.nn import sigmoid
+from jax.nn import relu
+from jax.nn import softmax
 
 from ..utils import glorot_uniform_init, setup_plotting
 
@@ -256,7 +258,7 @@ class ExpLossAverseUtil(UtilityBase):
     def __init__(self, lambda_=1.0, alpha=1.0):
         """
         The exponential utility function.
-        
+
         Wakker (2010), page 80, equation 3.5.4
 
         The implementation is a bit more complicated, and follows:
@@ -308,7 +310,7 @@ class NormExpLossAverseUtil(UtilityBase):
         The normalized exponential utility function is given by
 
             U(x) = (1 / alpha) * (1 - exp(-alpha * x)),       if x >= 0 and
-        
+
             U(x) = (-lambda / beta) * (1 - exp(-beta * -x)),  if x < 0.
 
         Scholten, M., & Read, D. (2014), page 71, equation 1
@@ -337,7 +339,7 @@ class NormLogLossAverseUtil(UtilityBase):
     def __init__(self, lambda_=1.0, alpha=1.0, beta=1.0):
         """
         The normalized logarithmic utility function is given by
-                
+
             U(x) = (1 / alpha) * log(1 + alpha * x),       if x >= 0 and
 
             U(x) = (-lambda / beta) * log(1 + beta * -x),  if x < 0.
@@ -368,7 +370,7 @@ class NormPowerLossAverseUtil(UtilityBase):
     def __init__(self, lambda_=1.0, alpha=1.0, beta=1.0):
         """
         The normalized power utility function is given by
-                
+
             U(x) = (1 / (1 + alpha)) * x^(1 / (1 + alpha)),       if x >= 0 and
 
             U(x) = (-lambda / (1 + beta)) * -x^(1 / (1 + beta)),  if x < 0.
@@ -502,8 +504,8 @@ class GeneralPowerLossAverseUtil(UtilityBase):
             U(-x) = -lambda * U(x) where x >= 0.
 
         References:
-         
-            Tversky, A., & Kahneman, D. (1992), page 309 
+
+            Tversky, A., & Kahneman, D. (1992), page 309
             Birnbaum, M. H. (2008), page 466, equation 2
         """
         super().__init__(
@@ -530,12 +532,12 @@ class GeneralPowerLossAverseUtil(UtilityBase):
 
 class NeuralNetworkUtil(UtilityBase):
 
-    def __init__(self, weights=None, biases=None):
+    def __init__(self, activation="sigmoid", n_units=10, weights=None, biases=None):
         """
         Peterson et al. (2021)
         """
 
-        n_units = 10
+        self.activation = activation
 
         if weights is None:
             weights = []
@@ -555,8 +557,17 @@ class NeuralNetworkUtil(UtilityBase):
         b1, b2 = self.parameters["biases"]
 
         def nn(outcome):
-            # hidden = jnp.tanh(jnp.dot(w1, outcome) + b1)
-            hidden = sigmoid(jnp.dot(w1, outcome) + b1)
+            if self.activation == "sigmoid":
+                hidden = sigmoid(jnp.dot(w1, outcome) + b1)
+            elif self.activation == "relu":
+                hidden = relu(jnp.dot(w1, outcome) + b1)
+            elif self.activation == "tanh":
+                hidden = jnp.tanh(jnp.dot(w1, outcome) + b1)
+            elif self.activation == "softmax":
+                hidden = softmax(jnp.dot(w1, outcome) + b1)
+            else:
+                raise ValueError("self.activation must be either 'softmax', 'tanh', 'sigmoid' or 'relu'")
+            # hidden = relu(jnp.dot(w1, outcome) + b1)
             # output = sigmoid(jnp.dot(w2, hidden) + b2)
             output = jnp.dot(w2, hidden) + b2
             return output
