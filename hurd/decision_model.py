@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 import jax
+import wandb
 from jax.config import config
 config.update("jax_debug_nans", True)
 jax.config.update("jax_debug_infs", True)
@@ -99,6 +100,13 @@ class DecisionModelBase(ABC):
         elif self.stochastic_spec == "constant-error":
             return self.stochastic_func(utils, self.mu)
 
+    def set_optimizer(self, optimizer, batch_size):
+        self.optimizer = optimizer
+        self.optimizer.initialize(self, batch_size=batch_size)
+
+        if self.optimizer.tolerance:
+            n_iters_no_progress = 0
+
     def evaluate(self, dataset):
 
         if isinstance(dataset, dict):
@@ -150,6 +158,8 @@ class DecisionModelBase(ABC):
         for ix in range(self.optimizer.n_iters):
 
             step_results = self.optimizer.step(ix)
+
+            wandb.log(step_results)
 
             if self.optimizer.tolerance:
                 if not step_results["is_improvement"]:
