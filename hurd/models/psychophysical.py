@@ -6,6 +6,7 @@ from jax import vmap
 from ..decision_model import DecisionModelBase
 
 from ..initializer import initializer
+from ..utils import setup_plotting
 
 
 class PsychophysicalModel(DecisionModelBase):
@@ -73,6 +74,20 @@ class ExpectedUtilityModel(PsychophysicalModel):
             util_func=util_func, pwf="IdentityPWF", **kwargs
         )
         self.id = "ExpectedUtilityModel"
+
+    def plot(self, show=True):
+
+        plt = setup_plotting()
+
+        uf1 = self.utility_fn
+
+        uf1.plot(show=False, xlim=(-200,200), ylim=(-200,200))
+        plt.autoscale()
+
+        if show:
+            plt.show()
+        else:
+            return plt
 
 
 class ExpectedValueModel(ExpectedUtilityModel):
@@ -216,7 +231,7 @@ class TransferOfAttentionExchangeModel(DecisionModelBase):
         """
         "Special" TAX model from:
 
-            Birnbaum, M. H. (2008). New paradoxes of risky 
+            Birnbaum, M. H. (2008). New paradoxes of risky
             decision making. Psychological Review, 115, 463–501.
         """
         super().__init__(**kwargs)
